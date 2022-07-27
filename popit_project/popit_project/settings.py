@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-@(d-*8h#%#&3!on^m2kor%wjecr0z!_12_fobm02zqmbv8()l-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1','*']
 
 
 # Application definition
@@ -151,21 +152,37 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko-kr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 
-USE_TZ = True
-
+USE_TZ = False # 한국 시간으로 출력하기 위해 True에서 False 로 변경함!
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+#  static 파일들이 위치한 경로
+STATICFILES_DIRS = [
+    #BASE_DIR / 'static',
+    os.path.join(BASE_DIR, 'profiles' , 'static'),
+]
+
+STATIC_ROOT = os.path.join('staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 사용자가 자신의 프로필 사진을 업로드할 수 있도록 만들 것이기 때문에 이는 media file에 해당한다.
+# media file을 저장하기 위해서는 이 파일이 어떤 url을 타고 들어와 어디에 모일지 지정해주어야 한다. 이를 settings.py와 urls.py에서 설정한다.
+# 이미지 등의 미디어 파일을 저장할 경로를 settings.py에 지정한다.
+
+MEDIA_URL = '/media/' 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # 이렇게 MEDIA_ROOT를 지정하면 미디어 파일이 저장되는 경로가 <BASE_DIR>/media/가 된다.
+
+#MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
