@@ -84,8 +84,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     alarm = models.BooleanField(default = True) # 알람 디폴트 값 = ON
     is_staff = models.BooleanField(default=False)
     followers = models.ManyToManyField('self',symmetrical=False,related_name='followings')
-    nickname = models.CharField(max_length = 40, blank = True, null = True) 
+    nickname = models.CharField(max_length = 40, blank = True, null = True)
     profile_image = models.ImageField(blank = True, null = True, upload_to = 'uploads')
+    category_list = models.ManyToManyField(Category,default=True)
 
     objects = UserManager()
 

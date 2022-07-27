@@ -20,7 +20,7 @@ class Pop(models.Model):
     writer = models.ForeignKey(User, null = True, on_delete = models.CASCADE) # 해당 팝의 작성자
     foreign_category = models.ForeignKey(Category, null = True, on_delete = models.CASCADE) # 해당 팝의 카테고리 종류
     user_who_like = models.ManyToManyField(User,related_name='user_who_like')
-
+    pop_image = models.ImageField(blank = True, null = True, upload_to = 'popimg')
 
 # 댓글
 class Comment(models.Model):

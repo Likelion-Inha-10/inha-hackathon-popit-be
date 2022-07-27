@@ -162,6 +162,7 @@ def my_profile(request):
             # serializer = UserSerializer(request.user, data = request.data, login_id = request.user.login_id, email = request.user.email, followers = request.user.followers)
             user = get_object_or_404(User, pk = request.user.id)
             user.nickname = request.data['nickname']
+            user.profile_image = request.data['profile_image']
             user.save()
             return Response({"complete" : "프로필 수정 성공"}, status = status.HTTP_200_OK)
 
@@ -246,9 +247,12 @@ def like(request,pop_id):
     if pop.user_who_like.filter(pk=request.user.pk).exists():
        pop.user_who_like.remove(request.user) #이미팔로우 상태면 언팔
        pop.likes_count -= 1
+       pop.save()
+
     else:
         pop.user_who_like.add(request.user) #아니면 팔로우
         pop.likes_count += 1
+        pop.save()
     return Response(status = 200)
 
 '''
