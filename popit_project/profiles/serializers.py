@@ -41,7 +41,7 @@ class PopSerializer(serializers.ModelSerializer):
         model = Pop
         fields = '__all__'
         #read_only_fields = ('id', )
-    
+
 class FollowUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

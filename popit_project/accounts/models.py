@@ -1,8 +1,14 @@
-from argparse import _MutuallyExclusiveGroup
+from unicodedata import category
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.models import AbstractUser
+#from profiles.models import Category
+
+# 카테고리
+class Category(models.Model):
+    category_name = models.CharField(null = True, max_length = 100)
+    category_image = models.ImageField(blank = True, null = True)
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -69,9 +75,6 @@ class User(AbstractUser):
         )
 '''
 
-class Category(models.Model):
-    category_name = models.CharField(null = True, max_length = 100)
-    category_image = models.ImageField(blank = True, null = True)
 
 class User(AbstractBaseUser, PermissionsMixin):
     login_id = models.CharField(max_length=30, unique=True, null=False, blank=False)
@@ -81,29 +84,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     alarm = models.BooleanField(default = True) # 알람 디폴트 값 = ON
     is_staff = models.BooleanField(default=False)
     followers = models.ManyToManyField('self',symmetrical=False,related_name='followings')
-    nickname = models.CharField(max_length = 40, blank = True) 
+    nickname = models.CharField(max_length = 40, blank = True, null = True) 
     profile_image = models.ImageField(blank = True, null = True, upload_to = 'uploads')
-    category_list = models.ManyToManyField(Category,default=True)
-    
-    # followings = models.ManyToManyField("self",symmetrical=False,related_name='followers') # 팔로잉
-    # followers = models.ManyToManyField("self",related_name=followings) # 팔로워
-
-#     # followings = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name =  'followings') # 팔로잉
-#     # followers = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name = 'followers') # 팔로워
-# =======
-#     followings = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name =  'followings') # 팔로잉
-#     followers = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name = 'followers') # 팔로워
-
-
-    # ManyToManyField : 다대다 관계. ex) 피자-토핑 관계
-
-    '''
-    is_superuser = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    '''
 
     objects = UserManager()
 
@@ -112,3 +94,4 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         db_table = 'user'
+
