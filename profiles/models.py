@@ -44,6 +44,7 @@ class Pop(models.Model):
     foreign_category = models.ForeignKey(Category, null = True, on_delete = models.CASCADE) # 해당 팝의 카테고리 종류
     user_who_like = models.ManyToManyField(User,related_name='user_who_like')
 
+
 # 댓글
 class Comment(models.Model):
     comments = models.CharField(null = True, max_length = 200)
