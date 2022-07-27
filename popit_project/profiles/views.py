@@ -17,7 +17,6 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 # Create your views here.
-from rest_framework import status
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -57,16 +56,6 @@ def pop_list_user(request, user_id):
 def create_pop_user_category(request, user_id, category_id):
     if request.method == 'POST':
         my_user = get_object_or_404(User, pk = user_id)
-        my_category = get_object_or_404(Category, pk = category_id)
-        serializer = PopSerializer(data = request.data)
-        if serializer.is_valid(raise_exception = True):
-            serializer.save(contents = request.data['contents'], foregin_category = my_category, writer = my_user)
-            return Response(serializer.data, status = status.HTTP_200_OK)
-        
-@api_view(['POST'])
-def create_pop_user_category(request,category_id):
-    if request.method == 'POST':
-        my_user = get_object_or_404(User, pk = request.user.pk)
         my_category = get_object_or_404(Category, pk = category_id)
         serializer = PopSerializer(data = request.data)
         if serializer.is_valid(raise_exception = True):
@@ -163,77 +152,27 @@ def comment_detail(request, comment_id):
             return Response(serializer.data, status = status.HTTP_202_ACCEPTED)
 
 
-# 특정 유저에 대한 프로필을 띄우기, 생성하기, 수정하기
-# @api_view(['GET', 'POST','PUT'])
-# def user_profile(request, user_id):
-#     my_user = get_object_or_404(User, pk = user_id)
+# 본인 프로필 띄우기 및 수정
+@api_view(['GET', 'PUT'])
+def my_profile(request):
+    if request.user.is_authenticated:
+        if request.method == 'GET':
+            return Response({'nickname' : request.user.nickname}, status = status.HTTP_200_OK)
+        elif request.method == 'PUT':
+            # serializer = UserSerializer(request.user, data = request.data, login_id = request.user.login_id, email = request.user.email, followers = request.user.followers)
+            user = get_object_or_404(User, pk = request.user.id)
+            user.nickname = request.data['nickname']
+            user.save()
+            return Response({"complete" : "프로필 수정 성공"}, status = status.HTTP_200_OK)
 
-#     if request.method == 'GET': # 프로필 띄우기        
-#         profile = get_object_or_404(Profile, user = my_user)
-#         serializer = ProfileSerializer(profile)
-#         return Response(serializer.data, status = status.HTTP_200_OK)
-    
-#     elif request.method == 'POST': # 프로필 생성하기
-#         serializer = ProfileSerializer(data = request.data, user = my_user)
-#         print(serializer)
-#         if serializer.is_valid(raise_exception = True):
-#             serializer.save(user = my_user, nickname = request.data['nickname'], profile_image = request.data['profile_image'])
-#             return Response(serializer.data, status = status.HTTP_201_CREATED)
 
-#     elif request.method == 'PUT': # 프로필 수정하기
-#         # my_user = request.user
-#         profile = get_object_or_404(Profile, user = my_user)
-#         serializer = ProfileSerializer(profile, data = request.data)
-#         if serializer.is_valid(raise_exception = True):
-#             serializer.save()
-#             return Response(serializer.data, status = status.HTTP_200_OK)
+# 타인의 프로필 띄우기
+@api_view(['GET'])
+def other_profile(request, user_id):
+    user = get_object_or_404(User, pk = user_id)
+    if request.method == 'GET':
+        return Response({'nickname' : user.nickname}, status= status.HTTP_200_OK)
 
-'''
-    elif request.method == "PUT" :  # 댓글 수정
-        serializer = CommentSerializer(instance = comment, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.data, status = status.HTTP_202_ACCEPTED)
-'''
-
-'''
-elif request.method == 'PUT':  # 특정 팝 수정하기 
-        serializer = PopSerializer(pop, data = request.data)
-        if serializer.is_valid(raise_exception = True): # 수정에 실패시 에러발생시키기
-            serializer.save()
-            return Response(serializer.data)
-'''
-
-class ProfileUpdateAPI(generics.UpdateAPIView):
-    # queryset = Profile.objects.all()
-    # serializer_class = ProfileSerializer
-    lookup_field = 'user_id'
-    
-    '''
-    def put(self, request, *args, **kwargs):
-        #data = request.data
-        user_id = self.kwargs['user_id']
-        qs = Profile.objects.filter(user = user_id)
-        print(qs)
-        serializer = ProfileSerializer(qs, data = request.data)
-        print("=================")
-        print(serializer)
-        print("--------------")
-        #print(serializer.data)
-        if serializer.is_valid():
-            print("weijiowerjwoierjo")
-            return Response(serializer.data)
-        print("wwwwwwwwwwwwwwwwwwwwwwwwwww")
-        return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
-        '''
-
-# '''
-# elif request.method == 'PUT':  # 특정 팝 수정하기 
-#         serializer = PopSerializer(pop, data = request.data)
-#         if serializer.is_valid(raise_exception = True): # 수정에 실패시 에러발생시키기
-#             serializer.save()
-#             return Response(serializer.data)
-# '''
 
 @api_view(['POST'])
 def follow(request,user_id):
@@ -311,3 +250,38 @@ def like(request,pop_id):
         pop.user_who_like.add(request.user) #아니면 팔로우
         pop.likes_count += 1
     return Response(status = 200)
+
+'''
+# 특정 유저에 대한 프로필을 띄우기, 생성하기, 수정하기
+@api_view(['GET', 'POST','PATCH'])
+def user_profile(request, user_id):
+    my_user = get_object_or_404(User, pk = user_id)
+
+    if request.method == 'GET': # 프로필 띄우기
+        profile = get_object_or_404(Profile, user = my_user)
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+    elif request.method == 'PATCH': # 프로필 수정하기
+        # my_user = request.user
+        profile = get_object_or_404(Profile, user = my_user)
+        print(profile)
+        serializer = ProfileSerializer(profile, data = request.data)
+        #print(request.user)
+        #serializer.initial_data['user'] = request.user
+        print('======')
+        print(my_user)
+        serializer.initial_data['user'] = my_user
+        if serializer.is_valid(raise_exception = True):
+            print(serializer.data)
+            serializer.save()
+            return Response(serializer.data, status = status.HTTP_200_OK)
+
+# 로그인 상태인 유저가 선택한 카테고리 리스트를, 해당 유저와 연결시킴
+@api_view(['POST'])
+def link_category_user(request, user_id):
+    if request.method == 'POST':
+        if request.user.is_authenticated:
+            person = get_object_or_404(User, pk = user_id)
+            person.category_list
+'''
