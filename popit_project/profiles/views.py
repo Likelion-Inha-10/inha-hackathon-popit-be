@@ -6,13 +6,11 @@ from django.shortcuts import get_list_or_404, get_object_or_404, render
 from django.urls import is_valid_path
 from requests import delete
 
-
-
 #from requests import Response, request
 from .models import Pop, Comment
 from accounts.models import User,Category
 from rest_framework import generics
-from .serializers import FollowUserSerializer, PopSerializer, CommentSerializer, CategoryListSerializer
+from .serializers import FollowUserSerializer, PopSerializer, CommentSerializer, CategoryListSerializer, CateSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
@@ -91,24 +89,27 @@ def pop_detail(request, pop_id):
     if request.method == 'GET':  # 특정 팝의 내용 상세 조회하기
         serializer = PopSerializer(pop)
         return Response(serializer.data)
-    elif request.method == 'DELETE':  # 특정 팝 삭제하기 
-        pop.delete()
-        data = {
-            'delete' : f'{pop_id}번째 팝이 삭제되었습니다.'
-        }
-        return Response(data, status = status.HTTP_204_NO_CONTENT)
+    elif request.method == 'DELETE':  # 특정 팝 삭제하기
+        if request.user.is_authenticated:
+            pop.delete()
+            data = {
+                'delete' : f'{pop_id}번째 팝이 삭제되었습니다.'
+            }
+            return Response(data, status = status.HTTP_204_NO_CONTENT)
     
-    elif request.method == 'PUT':  # 특정 팝 수정하기 
-        serializer = PopSerializer(pop, data = request.data)
-        if serializer.is_valid(raise_exception = True): # 수정에 실패시 에러발생시키기
-            serializer.save()
-            return Response(serializer.data)
+    elif request.method == 'PUT':  # 특정 팝 수정하기
+        if request.user.is_authenticated:
+            serializer = PopSerializer(pop, data = request.data)
+            if serializer.is_valid(raise_exception = True): # 수정에 실패시 에러발생시키기
+                serializer.save()
+                return Response(serializer.data)
 
 
 # 전체 댓글 리스트 조회하기
 @api_view(['GET'])
 def comment_list(request):
     if request.method == 'GET':
+        print("---------------------------------------------------")
         comments = get_list_or_404(Comment)
         serializer = CommentSerializer(comments, many = True)
         return Response(serializer.data)
@@ -126,7 +127,7 @@ def comment_create(request, pop_id):
     if request.method == 'POST':
         serializer = CommentSerializer(data = request.data)
         if serializer.is_valid(raise_exception = True):
-            serializer.save(comments = request.data['comments'], foregin_pop = pop) # 해당 특정 팝에다 댓글쓰기
+            serializer.save(comments = request.data['comments'], foregin_pop = pop, foregin_user=request.user) # 해당 특정 팝에다 댓글쓰기
             return Response(serializer.data , status = status.HTTP_201_CREATED)
 
 
@@ -139,17 +140,19 @@ def comment_detail(request, comment_id):
         return Response(serializer.data)
 
     elif request.method == "DELETE": # 댓글 삭제
-        comment.delete()
-        data= {
-            'delete' :f'댓글 {comment_id}번이 삭제 되었습니다.'
-        }
-        return Response(data, status=status.HTTP_204_NO_CONTENT)
+        if request.user.is_authenticated:
+            comment.delete()
+            data= {
+                'delete' :f'댓글 {comment_id}번이 삭제 되었습니다.'
+            }
+            return Response(data, status=status.HTTP_204_NO_CONTENT)
 
     elif request.method == "PUT" :  # 댓글 수정
-        serializer = CommentSerializer(instance = comment, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.data, status = status.HTTP_202_ACCEPTED)
+        if request.user.is_authenticated:
+            serializer = CommentSerializer(instance = comment, data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                return Response(serializer.data, status = status.HTTP_202_ACCEPTED)
 
 
 # 본인 프로필 띄우기 및 수정
@@ -254,6 +257,139 @@ def like(request,pop_id):
         pop.likes_count += 1
         pop.save()
     return Response(status = 200)
+
+
+#저장버튼
+@api_view(['POST'])
+def save(request,pop_id):
+    print(pop_id)
+    print("=-------------------")
+    saved_pop = get_object_or_404(Pop,pk=pop_id)
+    print("---------wewewewewe------------")
+    
+    if saved_pop.save_user.filter(pk=request.user.pk).exists():
+        saved_pop.save_user.remove(request.user)
+        saved_pop.save()
+    else:
+        saved_pop.save_user.add(request.user)
+        saved_pop.save()
+    serializer = PopSerializer(saved_pop)
+    return Response(serializer.data)
+
+#보관함에서 내가 저장한 pop만 보기(특정 카테고리의)
+@api_view(['GET'])
+def view_saved_pop(request,category_id):
+    saved_pop = Pop.objects.filter(foreign_category = category_id,save_user = request.user )
+    serializer = PopSerializer(saved_pop,many=True)
+    return Response(serializer.data)
+
+
+# 현재 로그인 상태인 유저에 종속한 팝 리스트를 총 최신생성 기긴을 기준으로 정렬 
+class created_at_list(generics.ListCreateAPIView):
+    queryset = Pop.objects.all().order_by('-created_at')
+    serializer_class = PopSerializer
+    lookup_field = 'id'
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.filter(foreign_category = self.kwargs['pk'], save_user = self.request.user)
+       
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+# 현재 로그인 상태인 유저에 종속한 팝 리스트를 총 좋아요 수를 기준으로 정렬 
+class likecount_list(generics.ListCreateAPIView):
+    queryset = Pop.objects.all().order_by('-likes_count')
+    serializer_class = PopSerializer
+    lookup_field = 'id'
+
+    def get(self, request, *args, **kwargs):
+        print(args)
+        return self.list(request, *args, *kwargs)
+    
+    def list(self, request, *args, **kwargs):
+        print(args)
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.filter(foreign_category = self.kwargs['pk'], save_user = self.request.user)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+# 현재 로그인 상태인 유저에 종속한 팝 리스트를 총 댓글 수를 기준으로 정렬 
+class commentcount_list(generics.ListCreateAPIView):
+    queryset = Pop.objects.all().order_by('-comments_count')
+    serializer_class = PopSerializer
+    lookup_field = 'id'
+
+    def get(self, request, *args, **kwargs):
+        print(args)
+        return self.list(request, *args, *kwargs)
+    
+    def list(self, request, *args, **kwargs):
+        print(args)
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.filter(foreign_category = self.kwargs['pk'], save_user = self.request.user)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+# 지금 뜨는 팝 더보기 버튼 10개 더 보여줌(pop들 중에서 카테고리 상관없이 좋아요 많은 순으로 정렬  )
+class view_nowup_more(generics.ListCreateAPIView):
+    queryset = Pop.objects.all().order_by('-likes_count')[:3]
+    serializer_class = PopSerializer
+    lookup_field = 'id'
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, *kwargs)
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        # queryset = queryset.filter(foreign_category = self.kwargs['pk'], save_user = self.request.user)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+
+# 나에게 맞는 팝 더보기 버튼 (내가 follow(ing) 한 사람의 pop들 10개 더 보여줌)    
+@api_view(['GET'])
+def view_fitme_more(request):
+    # user = User.objects.get(pk = request.user.pk)
+    # user = get_object_or_404(User,pk=request.user.pk)
+    cateone = request.user.category_list.all()  #다대다 관계인 followings는 쿼리셋이라서 다 가져온다음에 저렇게 접근하면된다고함
+    saved_pop = Pop.objects.filter(foreign_category = cateone[0])[:10]
+    serializer = PopSerializer(saved_pop,many=True)
+    return Response(serializer.data)
+
+
+#있는 카테고리 전부 불러오기(회원가입시)
+class CateList(generics.ListCreateAPIView):
+    queryset = Category.objects.all() #객체를 반환하는데 사용
+    serializer_class = CateSerializer
+    lookup_field = 'id'
+
 
 '''
 # 특정 유저에 대한 프로필을 띄우기, 생성하기, 수정하기
