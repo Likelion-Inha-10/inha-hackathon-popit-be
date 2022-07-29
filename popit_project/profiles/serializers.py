@@ -73,3 +73,9 @@ class CategoryListSerializer(serializers.ModelSerializer):
             
         }  
 
+class CateSerializer(serializers.ModelSerializer):
+    # User = UserSerialzer
+    class Meta:
+        model = Category
+        fields = '__all__'
+        read_only_fields = ('id',)

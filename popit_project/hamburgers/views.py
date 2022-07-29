@@ -157,23 +157,3 @@ class ChemiPopDetail(generics.RetrieveUpdateDestroyAPIView):
 
         return Response(serializer.data)
 '''
-
-
-'''
-# accounts.view 내용중 => 현재 로그인 상태인 유저에 대한 추천 카테고리 리스트들을 JSON 형태로 프론트로 부터 받아옴. 받아온 데이터를 저장함.
-# 현재 로그인 상태인 유저에 대한 카테고리 리스트를 띄움
-class my_storage(APIView):
-    def get(self, request):
-        category_list = Category.objects.filter(user = request.user)
-        
-# 현재 로그인 상태인 유저가 작성한 댓글 리스트를 띄움
-class my_comments(APIView):
-    
-
-# 보관소에서 특정 카테고리를 클릭했을때, 해당 카테코리에 대한 팝 리스트를 띄어줌
-class my_category_poplist(APIView):
-
-
-
-# api 개발안해도 되는 햄버거 기능들 : 테마, 로그아웃
-# 개발 포기한것 : 수정건의 목록, 알림 생성

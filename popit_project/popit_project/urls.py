@@ -69,6 +69,8 @@ urlpatterns = [
     path('comment', profiles_views.comment_list, name = 'comment_list'),  # 모든 댓글 리스트 가져오기
     path('<int:pop_id>/comments', profiles_views.comment_create, name = 'comment_create'), # 특정 해당 팝에 댓글 작성하기 + 특정 팝의 댓글 리스트 가져오기
     path('comment/<int:comment_id>', profiles_views.comment_detail, name = 'comment_detail'), # 특정 댓글 조회, 수정, 삭제하기
+    
+
 
     # 프로필 관련
     path('my_profile', profiles_views.my_profile, name = 'my_profile'), # 본인(= 현재 로그인된 회원)에 대한 프로필 띄우기 및 수정
@@ -77,9 +79,9 @@ urlpatterns = [
 
     # 햄버거 관련
     path('my_comment_list', hamburgers_views.my_comment_list, name = 'my_comment_list'),
-    path('likecount_list', hamburgers_views.likecount_list.as_view(), name = 'likecount_list'),
-    path('comment_count_list', hamburgers_views.comment_count_list.as_view(), name = 'comment_count_list'),
-    path('created_at_list', hamburgers_views.created_at_list.as_view(), name = 'created_at_list'),
+    #path('likecount_list', hamburgers_views.likecount_list.as_view(), name = 'likecount_list'),
+    #path('comment_count_list', hamburgers_views.comment_count_list.as_view(), name = 'comment_count_list'),
+    #path('created_at_list', hamburgers_views.created_at_list.as_view(), name = 'created_at_list'),
 
     # 카테고리 or 햄버거 관련 (by 한주형)
     path('follow/<int:user_id>', profiles_views.follow),
@@ -89,5 +91,18 @@ urlpatterns = [
     path('view_category',profiles_views.view_category), #사용자가 카테고리 뭐 골랐는지 보여주기
     path('view_selected_category_pop/<int:category_id>',profiles_views.view_selected_category_pop),
     path('like/<int:pop_id>',profiles_views.like),
+
+    path('save/<int:pop_id>',profiles_views.save), #pop게시글 저장
+    path('view_saved_pop/<int:category_id>',profiles_views.view_saved_pop), #저장한 pop만 보기 (특정 카테고리의)
+    path('created_at_list/<int:pk>', profiles_views.created_at_list.as_view()), # 내 보관함 중 특정 카테고리 pop들을 생성 순(최신 순)으로 정렬
+    path('view_likecount_list/<int:pk>',profiles_views.likecount_list.as_view()), #내 보관함 중 특정 카테고리 pop들 좋아요 순으로 정렬
+    path('view_commentcount_list/<int:pk>',profiles_views.commentcount_list.as_view()), #내 보관함 중 특정 카테고리 pop들 댓글 순으로 정렬
+    path('view_all_category',profiles_views.CateList.as_view()), #있는 카테고리 전부 불러오기(회원가입시)
+
+
+    path('view_nowup_more',profiles_views.view_nowup_more.as_view()), #지금 뜨는 팝 더보기 버튼 
+    # path('view_fitme_more',profiles_views.view_fitme_more.as_view()), #나에게 맞는 팝 더보기 버튼
+    path('view_fitme_more',profiles_views.view_fitme_more), #나에게 맞는 팝 더보기 버튼
 ]
-# urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
